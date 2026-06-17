@@ -1,5 +1,8 @@
 # BS-Rubicon — 기획전 혜택 데이터 관리 툴
 
+v1 :
+https://images.samsung.com/kdp/event/sec/2026/rubicon/v1.1/rubicon-tool.html
+
 삼성닷컴 기획전 페이지의 혜택 데이터를 입력·검증·변환하는 인터널 툴입니다.  
 서버 없이 HTML 파일만으로 동작합니다.
 
