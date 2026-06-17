@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BS-Rubicon Data Tool</title>
+<link rel="stylesheet" href="benefits-tool.css">
+</head>
+<body>
+
+<header class="header">
+  <span class="header-logo">BS-RUBICON</span>
+  <div class="header-sep"></div>
+  <span class="header-title">기획전 혜택 데이터 관리</span>
+  <div class="theme-switch-wrap" onclick="toggleTheme()" title="테마 변경">
+    <span class="theme-switch-label">🌙</span>
+    <div class="theme-switch" id="theme-switch">
+      <div class="theme-switch-thumb"></div>
+    </div>
+    <span class="theme-switch-label">☀️</span>
+  </div>
+</header>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('form', this)">📝 데이터 입력</button>
+  <button class="tab-btn" onclick="switchTab('validator', this)">🔍 데이터 검증</button>
+  <div style="margin-left:auto; display:flex; align-items:center; gap:8px; padding: 0 0 0 16px;">
+    <input type="file" id="excel-upload" accept=".xlsx,.xls" style="display:none;" onchange="importExcel(this)">
+    <button class="btn btn-secondary btn-sm" onclick="document.getElementById('excel-upload').click()">📂 엑셀 불러오기</button>
+    <button class="btn btn-secondary btn-sm" onclick="openPasteModal()">📋 엑셀 붙여넣기</button>
+    <div style="width:1px; height:20px; background:var(--border);"></div>
+    <input type="text" id="excel-filename" placeholder="파일명 (기본: 기획전명)" style="background:var(--surface2); border:1px solid var(--border); border-radius:6px; color:var(--text); font-size:12px; padding:5px 10px; outline:none; width:360px;">
+    <button class="btn btn-success btn-sm" onclick="exportExcel()">엑셀 내보내기 (.xlsx)</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     TAB 1 : 입력 폼
+═══════════════════════════════════════ -->
+<div id="tab-form" class="tab-panel active">
+<div class="container">
+
+  <!-- 고정 영역 -->
+  <div class="section-label">고정 영역</div>
+  <div class="card">
+    <div class="card-title">기획전 기본 정보</div>
+    <div class="field-grid full" style="gap:12px">
+      <div class="field-grid">
+        <div class="field">
+          <label>기획전 명 <span style="color:var(--error)">*</span></label>
+          <input type="text" id="event_name" placeholder="ex. 전시컨텐츠[BESPOKE 청소기 | vacuum-cleaner]">
+          <span class="field-hint">BO에 등록된 기획전 명</span>
+        </div>
+        <div class="field">
+          <label>기획전 URL <span style="color:var(--error)">*</span></label>
+          <input type="text" id="event_url" placeholder="ex. https://www.samsung.com/sec/event/...">
+          <span class="field-hint">라이브 URL</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>기획전 상세설명</label>
+        <textarea id="event_description" rows="2" placeholder="ex. Bespoke AI 스팀 신제품과 12개월 구독료 포인트 혜택 놓치지 마세요"></textarea>
+        <span class="field-hint">기획전 페이지 상단 부제 또는 소개 문구</span>
+      </div>
+      <div class="field">
+        <label>기획전 유의사항</label>
+        <textarea id="event_caution" rows="4" placeholder="ex. 모든 혜택은 본 프로모션 페이지에 노출된 행사모델에 한하여 적용됩니다. 본 행사는 삼성닷컴 온라인 단독 행사이며, 삼성전자 오프라인 매장과는 무관합니다."></textarea>
+        <span class="field-hint">마침표+띄어쓰기(. )로 문장 구분</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 혜택 목록 -->
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px">
+    <div class="section-label" style="margin-bottom:0">혜택 목록</div>
+    <span id="benefit-count" class="badge badge-blue">0개</span>
+  </div>
+
+  <div id="benefits-list"></div>
+
+  <button class="btn btn-secondary" onclick="addBenefit()" style="width:100%; justify-content:center; padding:12px;">
+    + 혜택 추가
+  </button>
+
+  <div class="action-bar">
+    <button class="btn btn-primary" onclick="generateJSON()">JSON 생성 &amp; 복사</button>
+    <button class="btn btn-secondary" onclick="loadSample()">샘플 불러오기</button>
+    <button class="btn btn-danger btn-sm" onclick="clearAll()" style="margin-left:auto">전체 초기화</button>
+  </div>
+
+  <!-- JSON 미리보기 -->
+  <div id="json-preview-wrap" style="display:none; margin-top:20px;">
+    <div class="section-label">생성된 JSON</div>
+    <div class="card" style="padding:0; overflow:hidden;">
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-bottom:1px solid var(--border);">
+        <span style="font-size:12px; color:var(--text-muted);">HTML에 삽입할 JSON</span>
+        <button class="btn btn-secondary btn-sm" onclick="copyJSON()">복사</button>
+      </div>
+      <pre id="json-output" style="padding:16px; font-family:monospace; font-size:12px; line-height:1.6; white-space:pre-wrap; word-break:break-all; color:#a3e635; overflow-x:auto; max-height:400px; overflow-y:auto;"></pre>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     TAB 2 : 검증 & 클렌징
+═══════════════════════════════════════ -->
+<div id="tab-validator" class="tab-panel">
+<div class="container">
+
+  <div class="hint-box">
+    <strong>사용법:</strong> 기획자로부터 받은 엑셀을 그대로 복사해서 왼쪽에 붙여넣으면, 공백 제거 및 JSON 유효성 검사를 자동으로 수행합니다.
+  </div>
+
+  <div class="tab2-sub-tabs">
+    <button class="sub-tab-btn active" onclick="switchSubTab('raw', this)">데이터 입력</button>
+    <button class="sub-tab-btn" onclick="switchSubTab('result', this)">검증 결과</button>
+    <button class="sub-tab-btn" onclick="switchSubTab('clean', this)">변환 결과</button>
+  </div>
+
+  <!-- raw -->
+  <div id="sub-raw" class="sub-panel active">
+    <div class="section-label">원본 텍스트 붙여넣기</div>
+    <textarea class="paste-area" id="raw-input" placeholder="엑셀에서 복사한 JSON 전체 내용을 여기에 붙여넣으세요...&#10;&#10;(공백이 많아도 괜찮습니다. 자동으로 정리됩니다.)" oninput="onRawInput()"></textarea>
+    <div class="action-bar">
+      <button class="btn btn-primary" onclick="runValidation()">검사 실행</button>
+      <button class="btn btn-secondary" onclick="clearValidator()">초기화</button>
+      <span id="char-count" class="text-muted" style="font-size:11px; margin-left:auto;">0자</span>
+    </div>
+  </div>
+
+  <!-- result -->
+  <div id="sub-result" class="sub-panel">
+    <div class="section-label">유효성 검사 결과</div>
+    <div id="val-result-box" class="result-box">
+      <span style="color:var(--text-muted); font-size:12px;">검증을 먼저 실행해주세요.</span>
+    </div>
+  </div>
+
+  <!-- clean -->
+  <div id="sub-clean" class="sub-panel">
+    <div class="section-label">변환 결과</div>
+    <div style="display:flex; gap:10px; margin-bottom:12px;">
+      <button class="btn btn-primary btn-sm" onclick="copyCleanJSON()">정제된 JSON 복사</button>
+      <button class="btn btn-secondary btn-sm" onclick="copyScriptTag()">script 태그 포함 복사</button>
+    </div>
+    <div id="clean-result-box" class="result-box">
+      <span style="color:var(--text-muted); font-size:12px;">검증을 먼저 실행해주세요.</span>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     MODAL : 엑셀 붙여넣기
+═══════════════════════════════════════ -->
+<div id="paste-modal" class="modal-overlay" onclick="closePasteModal(event)">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">📋 엑셀 데이터 붙여넣기</div>
+        <div class="modal-sub">잠금된 엑셀에서 셀 전체 선택 후 복사(Ctrl+C) → 여기에 붙여넣기(Ctrl+V)</div>
+      </div>
+      <button class="modal-close" onclick="closePasteModal()">✕</button>
+    </div>
+    <textarea class="paste-area modal-textarea" id="paste-input" placeholder="엑셀에서 복사한 내용을 여기에 붙여넣으세요.&#10;&#10;• 내보내기로 만든 엑셀 전체 또는 A열만 복사해도 됩니다.&#10;• 한국어 설명 컬럼(B열)이 포함되어도 자동으로 제거됩니다.&#10;• 탭·공백이 많아도 자동 정리됩니다." oninput="onPasteInput()"></textarea>
+    <div class="modal-footer">
+      <span id="paste-char-count" class="text-muted" style="font-size:11px;">0자</span>
+      <div style="display:flex; gap:8px; margin-left:auto;">
+        <button class="btn btn-secondary" onclick="closePasteModal()">취소</button>
+        <button class="btn btn-primary" onclick="applyPastedExcel()">입력</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="benefits-tool.js"></script>
+</body>
+</html>
